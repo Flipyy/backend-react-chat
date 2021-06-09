@@ -1,5 +1,7 @@
 import express from "express"
-import {UserModel} from "../schemass"
+import {UserModel} from "../models"
+import {IUser} from "../models/User"
+import {createJWToken} from "../utils";
 
 class UserController {
     show(req: express.Request, res: express.Response) {
@@ -12,10 +14,6 @@ class UserController {
             }
             res.json(user)
         })
-    }
-
-    getMe() {
-
     }
 
     create(req: express.Request, res: express.Response) {
@@ -34,15 +32,45 @@ class UserController {
     delete(req: express.Request, res: express.Response) {
         const id: string = req.params.id
         UserModel.findOneAndDelete({_id: id}).then((user: any) => {
-            res.json({
-                message: `User ${user.fullname} deleted`
-            })
+            if (user) {
+                res.json({
+                    message: `User ${user.fullname} deleted`
+                })
+            }
         })
             .catch((err: any) => {
                 res.json(404).json({
                     message: "User not found"
                 })
             })
+    }
+
+    login(req: express.Request, res: express.Response) {
+        const postData = {
+            email: req.body.email,
+            password: req.body.password
+        }
+
+        UserModel.findOne({email:postData.email}, (err: any, user: IUser) => {
+            if (err) {
+                return res.status(404).json({
+                    message: "User not found"
+                })
+            }
+
+            if (user.password === postData.password) {
+                const token = createJWToken(user)
+                res.json({
+                    status: "success",
+                    token
+                })
+            } else {
+                res.json({
+                    status: "error",
+                    message: "Incorrect password or email"
+                })
+            }
+        })
     }
 }
 
