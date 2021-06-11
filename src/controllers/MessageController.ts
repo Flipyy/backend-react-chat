@@ -21,7 +21,8 @@ class MessageController {
 
     create(req: express.Request, res: express.Response) {
 
-        const userId = "60bb897a786de8067463225e"
+        // @ts-ignore
+        const userId = req.user._id
 
         const postData = {
             text: req.body.text,

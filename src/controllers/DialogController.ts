@@ -4,8 +4,10 @@ import {DialogModel, MessageModel} from "../models"
 
 class DialogController {
 
-    index(req: express.Request, res: express.Response) {
-        const authorId: any = "60bb897a786de8067463225e"
+    index(req: express.Request, res: express.Response): void {
+
+        // @ts-ignore
+        const authorId: any = req.user._id
 
         DialogModel.find({author: authorId})
             .populate(["author", "partner"])
