@@ -1,28 +1,41 @@
 import express from "express"
 import {DialogModel, MessageModel} from "../models"
+import socket from "socket.io";
 
 
 class DialogController {
 
-    index(req: express.Request, res: express.Response): void {
+    io: socket.Server;
+
+    constructor(io: socket.Server) {
+        this.io = io;
+    }
+
+    index = (req: express.Request, res: express.Response): void => {
 
         // @ts-ignore
         const authorId: any = req.user._id
 
         DialogModel.find({author: authorId})
             .populate(["author", "partner"])
-            .exec(function (err: any, dialogs: any) {
+            .populate({
+                path: 'lastMessage',
+                populate: {
+                    path: 'user',
+                },
+            })
+            .exec(function (err, dialogs) {
                 if (err) {
-                    return res.status(404,).json({
-                        message: "Dialogs not found"
-                    })
+                    return res.status(404).json({
+                        message: 'Dialogs not found',
+                    });
                 }
-            return res.json(dialogs)
-        })
+                return res.json(dialogs);
+            })
     }
 
 
-    create(req: express.Request, res: express.Response) {
+    create = (req: express.Request, res: express.Response): void => {
         const postData = {
             author: req.body.author,
             partner: req.body.partner,
@@ -47,7 +60,7 @@ class DialogController {
         })
     }
 
-    delete(req: express.Request, res: express.Response) {
+    delete = (req: express.Request, res: express.Response): void => {
         const id: string = req.params.id
         DialogModel.findOneAndDelete({_id: id}).then((dialog: any) => {
             if (dialog) {

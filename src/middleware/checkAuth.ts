@@ -6,8 +6,9 @@ import { DecodedData } from "../utils/verifyJWToken";
 export default (req: any, res: express.Response, next: express.NextFunction): void => {
 
     if (
-        req.path === "/user/login" ||
-        req.path === "/user/registration"
+        req.path === "/user/signin" ||
+        req.path === "/user/signup" ||
+        req.path === "/user/verify"
     ) {
         return next();
     }
