@@ -14,9 +14,9 @@ class DialogController {
     index = (req: express.Request, res: express.Response): void => {
 
         // @ts-ignore
-        const authorId: any = req.user._id
+        const userId: any = req.user._id
 
-        DialogModel.find({author: authorId})
+        DialogModel.find().or([{author: userId}, {partner: userId}])
             .populate(["author", "partner"])
             .populate({
                 path: 'lastMessage',
@@ -37,19 +37,26 @@ class DialogController {
 
     create = (req: express.Request, res: express.Response): void => {
         const postData = {
-            author: req.body.author,
+            // @ts-ignore
+            author: req.user._id,
             partner: req.body.partner,
         }
         const dialog = new DialogModel(postData);
         dialog.save().then((dialogObj: any) => {
             const message = new MessageModel({
                 text: req.body.text,
-                user: req.body.author,
+                // @ts-ignore
+                user: req.user._id,
                 dialog: dialogObj._id,
             })
             message.save().then(() => {
-                res.json({
-                    dialog: dialogObj,
+                dialogObj.lastMessage = message._id
+                dialogObj.save().then(() => {
+                    res.json(dialogObj)
+                    this.io.emit("SERVER:DIALOG_CREATED", {
+                        ...postData,
+                        dialog: dialogObj
+                    })
                 })
 
             }).catch((reason: any) => {
@@ -62,7 +69,7 @@ class DialogController {
 
     delete = (req: express.Request, res: express.Response): void => {
         const id: string = req.params.id
-        DialogModel.findOneAndDelete({_id: id}).then((dialog: any) => {
+        DialogModel.deleteOne({_id: id}).then((dialog: any) => {
             if (dialog) {
                 res.json({
                     message: `Dialog deleted`

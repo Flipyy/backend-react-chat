@@ -1,17 +1,18 @@
 import mongoose, {Schema, Document} from "mongoose"
-import differenceInMinutes from "date-fns/differenceInMinutes"
+import {differenceInMinutes, parseISO} from "date-fns"
 
 import isEmail from "validator/lib/isEmail"
 import {generatePasswordHash} from "../utils"
 
 export interface IUser extends Document{
-    email?: string
-    fullname?: string | any
-    password?: string
-    confirmed?: boolean
-    avatar?: string
-    confirm_hash?: string | any
-    last_seen?: Date
+    email: string
+    fullname: string | any
+    password: string
+    confirmed: boolean
+    avatar: string
+    confirm_hash: string | any
+    last_seen: Date
+    data?: IUser;
 }
 
 
@@ -38,16 +39,22 @@ const UserSchema = new Schema({
     confirm_hash: String,
     last_seen: {
         type: Date,
-        default: new Date()
-    }
-}, {
+        default: new Date(),
+    },
+    },
+    {
     timestamps: true
-})
+    }
+)
 
 UserSchema.virtual("isOnline").get(function (this: any) {
     // @ts-ignore
-    return differenceInMinutes(new Date().toISOString(), this.last_seen) > 5
+    return differenceInMinutes(parseISO(new Date().toISOString()), this.last_seen) < 305
 })
+
+UserSchema.set("toJSON", {
+    virtuals: true,
+});
 
 UserSchema.pre<IUser>("save", async function (next) {
     // eslint-disable-next-line @typescript-eslint/no-this-alias

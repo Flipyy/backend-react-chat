@@ -40,9 +40,25 @@ class UserController {
         })
     }
 
+    findUsers = (req: express.Request, res: express.Response): void => {
+        const query: any = req.query.query;
+        UserModel.find()
+            .or([
+                { fullname: new RegExp(query, "i") },
+                { email: new RegExp(query, "i") },
+            ])
+            .then((users: IUser[]) => res.json(users))
+            .catch((err: any) => {
+                return res.status(404).json({
+                    status: "error",
+                    message: err,
+                });
+            });
+    };
+
     delete = (req: express.Request, res: express.Response): void => {
         const id: string = req.params.id
-        UserModel.findOneAndDelete({_id: id}).then((user: any) => {
+        UserModel.deleteOne({_id: id}).then((user: any) => {
             if (user) {
                 res.json({
                     message: `User ${user.fullname} deleted`
@@ -77,7 +93,7 @@ class UserController {
                     status: "error",
                     message: reason,
                 });
-            })
+                })
     }
 
     verify = (req: express.Request, res: express.Response): void => {
@@ -112,28 +128,28 @@ class UserController {
 
         if (!errors.isEmpty()) {
             res.status(422).json({ errors: errors.array() });
+        } else {
+            UserModel.findOne({email: postData.email}, (err: any, user: any) => {
+                if (err || !user) {
+                    return res.status(404).json({
+                        message: "User not found"
+                    })
+                }
+
+                if (bcrypt.compareSync(postData.password, user.password)) {
+                    const token = createJWToken(user);
+                    res.json({
+                        status: "success",
+                        token,
+                    })
+                } else {
+                    res.status(403).json({
+                        status: "error",
+                        message: "Incorrect password or email"
+                    })
+                }
+            })
         }
-
-        UserModel.findOne({email:postData.email}, (err: any, user: any) => {
-            if (err || !user) {
-                return res.status(404).json({
-                    message: "User not found"
-                })
-            }
-
-            if (bcrypt.compareSync(postData.password, user.password)) {
-                const token = createJWToken(user);
-                res.json({
-                    status: "success",
-                    token,
-                })
-            } else {
-                res.json({
-                    status: "error",
-                    message: "Incorrect password or email"
-                })
-            }
-        })
     }
 }
 

@@ -22,7 +22,7 @@ export default (req: any, res: express.Response, next: express.NextFunction): vo
                 req.user = user.data._doc
             }
             next()
-        }).catch(err => {
+        }).catch(() => {
             res.status(403).json({message: "Invalid auth token provided."})
         })
     }
