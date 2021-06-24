@@ -1,16 +1,11 @@
 import mongoose, {Schema, Document} from "mongoose"
 
+import { IDialog } from "./Dialog";
+
 export interface IMessage extends Document{
-    text: {
-        type: string
-        require: boolean
-    }
-    dialog: {
-        type: Schema.Types.ObjectId
-        ref: string
-        requireL: true
-    }
-    unread: boolean
+    text: string;
+    dialog: IDialog | string;
+    read: boolean;
 }
 
 
@@ -19,14 +14,15 @@ const MessageSchema = new Schema(
         text: { type: String, require: Boolean },
         dialog: { type: Schema.Types.ObjectId, ref: "Dialog", require: true},
         user: { type: Schema.Types.ObjectId, ref: "User", require: true},
-        unread: {
+        read: {
             type: Boolean,
             default: false
-
-        }
+        },
+        attachments: [{ type: Schema.Types.ObjectId, ref: "UploadFile" }]
     },
     {
         timestamps: true,
+        usePushEach: true
     }
 )
 

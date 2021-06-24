@@ -3,12 +3,15 @@ import express from "express"
 import socket from "socket.io"
 import {checkAuth, updateLastSeen} from "../middleware";
 import {loginValidation, registerValidation} from "../utils/validations";
-import {UserCtrl, DialogCtrl, MessageCtrl} from "../controllers"
+import {UserCtrl, DialogCtrl, MessageCtrl, UploadFileCtrl} from "../controllers"
+
+import multer from "./multer";
 
 const createRoutes = (app: express.Express, io: socket.Server) => {
     const UserController = new UserCtrl(io);
     const DialogController = new DialogCtrl(io);
     const MessageController = new MessageCtrl(io);
+    const UploadFileController = new UploadFileCtrl();
 
     app.use(bodyParser.json())
     app.use(checkAuth)
@@ -30,6 +33,8 @@ const createRoutes = (app: express.Express, io: socket.Server) => {
     app.post("/messages", MessageController.create)
     app.delete("/messages", MessageController.delete);
 
+    app.post("/files", multer.single("file"), UploadFileController.create);
+    app.delete("/files", UploadFileController.delete);
 }
 
 export default createRoutes

@@ -16,24 +16,23 @@ class DialogController {
         // @ts-ignore
         const userId: any = req.user._id
 
-        DialogModel.find().or([{author: userId}, {partner: userId}])
-            .populate(["author", "partner"])
+        DialogModel.find()
+            .or([{ author: userId }, { partner: userId }])
+            .populate(['author', 'partner'])
             .populate({
                 path: 'lastMessage',
                 populate: {
                     path: 'user',
                 },
-            })
-            .exec(function (err, dialogs) {
+            }).exec(function (err, dialogs) {
                 if (err) {
                     return res.status(404).json({
                         message: 'Dialogs not found',
                     });
                 }
                 return res.json(dialogs);
-            })
+            });
     }
-
 
     create = (req: express.Request, res: express.Response): void => {
         const postData = {
@@ -50,21 +49,23 @@ class DialogController {
                 dialog: dialogObj._id,
             })
             message.save().then(() => {
-                dialogObj.lastMessage = message._id
-                dialogObj.save().then(() => {
-                    res.json(dialogObj)
-                    this.io.emit("SERVER:DIALOG_CREATED", {
-                        ...postData,
-                        dialog: dialogObj
-                    })
-                })
-
-            }).catch((reason: any) => {
+                    dialogObj.lastMessage = message._id
+                    dialogObj.save().then(() => {
+                        res.json(dialogObj);
+                        this.io.emit('SERVER:DIALOG_CREATED', {
+                            ...postData,
+                            dialog: dialogObj,
+                        });
+                    });
+                }).catch((reason: any) => {
                 res.json(reason)
             })
-        }).catch((reason: any) => {
-            res.json(reason)
-        })
+        }).catch((err) => {
+            res.json({
+                status: 'error',
+                message: err,
+            });
+        });
     }
 
     delete = (req: express.Request, res: express.Response): void => {

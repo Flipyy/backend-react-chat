@@ -10,14 +10,45 @@ class MessageController {
         this.io = io;
     }
 
+    updateReadStatus = (
+        res: express.Response,
+        userId: string,
+        dialogId: string
+    ): void => {
+        MessageModel.updateMany(
+            { dialog: dialogId, user: { $ne: userId } },
+            { $set: { read: true } },
+                    // @ts-ignore
+            (err: any): void => {
+                if (err) {
+                    res.status(500).json({
+                        status: "error",
+                        message: err,
+                    });
+                } else {
+                    this.io.emit("SERVER:MESSAGES_READED", {
+                        userId,
+                        dialogId,
+                    });
+                }
+            }
+        );
+    };
+
+
     index = (req: express.Request, res: express.Response): void => {
         const dialogId: any = req.query.dialog
+        // @ts-ignore
+        const userId: string = req.user._id;
+
+        this.updateReadStatus(res, userId, dialogId);
 
         MessageModel.find({dialog: dialogId})
             .populate(["dialog", "user", "attachments"])
             .exec(function (err: any, messages: any) {
                 if (err) {
                     return res.status(404,).json({
+                        status: "error",
                         message: "Messages not found"
                     })
                 }
@@ -34,12 +65,15 @@ class MessageController {
         const postData = {
             text: req.body.text,
             dialog: req.body.dialog_id,
+            attachments: req.body.attachments,
             user: userId,
         }
         const message = new MessageModel(postData);
 
+        this.updateReadStatus(res, userId, req.body.dialog_id);
+
         message.save().then((obj: any) => {
-            obj.populate(["dialog", "user", "attachments"],
+            obj.populate("dialog user attachments",
                 (err: any, message: any) => {
                     if (err) {
                         return res.status(500).json({
